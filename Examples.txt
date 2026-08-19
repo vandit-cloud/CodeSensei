@@ -1,0 +1,70 @@
+import time
+
+start = time.time()
+
+n = 10500
+count = 0
+
+for i in range(n):
+    for j in range(n):
+        if i == j:
+            count += 1
+
+end = time.time()
+
+print("Count:", count)
+print("Time taken:", round(end - start, 2), "seconds")
+
+____________________________________________
+
+
+import time
+
+start = time.time()
+
+n = 10500
+count = n  # direct logic, no loops needed
+
+end = time.time()
+
+print("Count:", count)
+print("Time taken:", round(end - start, 6), "seconds")
+____________________________________________
+❌ SLOW VERSION (Nested loops)
+import time
+
+data = list(range(8000))
+search = list(range(8000))
+
+start = time.time()
+
+result = []
+for i in data:
+    for j in search:
+        if i == j:
+            result.append(i)
+
+end = time.time()
+
+print("Matches:", len(result))
+print("Time:", round(end - start, 2), "seconds")
+____________________________________________
+✅ FAST VERSION (Set lookup)
+import time
+
+data = list(range(8000))
+search = set(range(8000))  # key change
+
+start = time.time()
+
+result = []
+for i in data:
+    if i in search:
+        result.append(i)
+
+end = time.time()
+
+print("Matches:", len(result))
+print("Time:", round(end - start, 6), "seconds")
+
+

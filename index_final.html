@@ -1,0 +1,1925 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeSensei - Smart Learning IDE</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --primary-light: #818cf8;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --shadow: rgba(0, 0, 0, 0.3);
+            --glow: rgba(99, 102, 241, 0.3);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 2rem;
+            overflow-x: hidden;
+            transition: padding 0.3s;
+        }
+        
+        body.fullscreen {
+            padding: 0;
+        }
+        
+        /* Animated background grid */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(99, 102, 241, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(99, 102, 241, 0.05) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: -1;
+            animation: gridMove 20s linear infinite;
+        }
+        
+        @keyframes gridMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            animation: fadeIn 0.6s ease-out;
+            transition: max-width 0.3s;
+        }
+        
+        .container.fullscreen {
+            max-width: 100%;
+            height: 100vh;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Header */
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            animation: slideDown 0.8s ease-out;
+            transition: margin 0.3s;
+        }
+        
+        header.hidden {
+            display: none;
+        }
+        
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 50%, #a78bfa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+        }
+        
+        .tagline {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+        
+        /* Main Layout */
+        .editor-section {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border);
+            box-shadow: 0 20px 50px var(--shadow);
+            animation: slideUp 0.8s ease-out 0.2s both;
+            transition: all 0.3s;
+        }
+        
+        .editor-section.fullscreen {
+            border-radius: 0;
+            margin: 0;
+            height: 60vh;
+        }
+        
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        
+        .section-title {
+            font-size: 0.875rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--primary-light);
+        }
+        
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .icon-btn {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-family: 'Manrope', sans-serif;
+            font-weight: 500;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .icon-btn:hover {
+            background: var(--border);
+            transform: translateY(-2px);
+        }
+        
+        .mode-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+        
+        .mode-toggle input[type="checkbox"] {
+            width: 40px;
+            height: 20px;
+            background: var(--bg-tertiary);
+            border-radius: 10px;
+            position: relative;
+            appearance: none;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .mode-toggle input[type="checkbox"]:checked {
+            background: var(--primary);
+        }
+        
+        .mode-toggle input[type="checkbox"]::before {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: white;
+            top: 2px;
+            left: 2px;
+            transition: all 0.3s;
+        }
+        
+        .mode-toggle input[type="checkbox"]:checked::before {
+            left: 22px;
+        }
+        
+        #editor {
+            width: 100%;
+            height: 450px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            transition: height 0.3s;
+        }
+        
+        #editor.fullscreen {
+            height: calc(60vh - 100px);
+        }
+        
+        /* Control Bar */
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            animation: slideUp 0.8s ease-out 0.3s both;
+        }
+        
+        .btn {
+            padding: 1rem 1.5rem;
+            border: none;
+            border-radius: 12px;
+            font-family: 'Manrope', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        .btn:active::before {
+            width: 300px;
+            height: 300px;
+        }
+        
+        .btn-run {
+            background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+            color: white;
+        }
+        
+        .btn-run:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.4);
+        }
+        
+        .btn-optimize {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+        }
+        
+        .btn-optimize:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px var(--glow);
+        }
+        
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+        
+        .btn-secondary:hover {
+            background: var(--border);
+            transform: translateY(-2px);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-icon {
+            font-size: 1.2rem;
+        }
+        
+        /* Loading Spinner */
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Output Section */
+        .output-section {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border);
+            box-shadow: 0 20px 50px var(--shadow);
+            animation: slideUp 0.8s ease-out 0.4s both;
+            transition: all 0.3s;
+        }
+        
+        .output-section.fullscreen {
+            border-radius: 0;
+            margin: 0;
+            height: 40vh;
+        }
+        
+        #output {
+            background: #000;
+            color: #0f0;
+            padding: 1.5rem;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            min-height: 120px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            border: 1px solid var(--border);
+            transition: max-height 0.3s;
+        }
+        
+        #output.fullscreen {
+            max-height: calc(40vh - 100px);
+        }
+        
+        #output:empty::before {
+            content: '> Output will appear here...';
+            color: #555;
+            font-style: italic;
+        }
+        
+        .output-error {
+            color: #ff6b6b !important;
+        }
+        
+        .output-success {
+            color: #51cf66 !important;
+        }
+        
+        /* Suggestion Panel */
+        .suggestion-panel {
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--primary);
+            box-shadow: 0 20px 50px var(--shadow);
+            animation: slideUp 0.8s ease-out 0.5s both;
+        }
+        
+        .suggestion-panel.hidden {
+            display: none;
+        }
+        
+        .issue-header {
+            display: flex;
+            align-items: start;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .issue-icon {
+            font-size: 2.5rem;
+            flex-shrink: 0;
+        }
+        
+        .issue-content h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+        
+        .issue-description {
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+        
+        .severity-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .severity-high {
+            background: rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+        }
+        
+        .severity-medium {
+            background: rgba(245, 158, 11, 0.2);
+            color: #fcd34d;
+        }
+        
+        .severity-low {
+            background: rgba(59, 130, 246, 0.2);
+            color: #93c5fd;
+        }
+        
+        .detail-section {
+            background: var(--bg-primary);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+            border: 1px solid var(--border);
+        }
+        
+        .detail-section h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: var(--primary-light);
+        }
+        
+        .detail-section p {
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+        
+        .code-example {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .code-block {
+            background: #000;
+            border-radius: 6px;
+            padding: 1rem;
+            border: 1px solid var(--border);
+        }
+        
+        .code-block-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+            color: var(--text-muted);
+        }
+        
+        .code-block pre {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            color: var(--text-secondary);
+            margin: 0;
+        }
+        
+        .before-label {
+            color: var(--error);
+        }
+        
+        .after-label {
+            color: var(--success);
+        }
+        
+        /* Success State */
+        .success-message {
+            text-align: center;
+            padding: 2rem;
+            color: var(--success);
+        }
+        
+        .success-message .icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 2rem;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            animation: slideUp 0.3s;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .modal-header h2 {
+            font-size: 1.5rem;
+            color: var(--text-primary);
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        
+        .modal-close:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+        
+        .share-link {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            word-break: break-all;
+            margin-bottom: 1rem;
+        }
+        
+        .modal-input {
+            width: 100%;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.75rem;
+            color: var(--text-primary);
+            font-family: 'Manrope', sans-serif;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .modal-textarea {
+            width: 100%;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.75rem;
+            color: var(--text-primary);
+            font-family: 'Manrope', sans-serif;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--success);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            display: none;
+            align-items: center;
+            gap: 0.75rem;
+            animation: slideIn 0.3s;
+            z-index: 2000;
+        }
+        
+        .toast.active {
+            display: flex;
+        }
+        
+        .toast.error {
+            background: var(--error);
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(400px); }
+            to { transform: translateX(0); }
+        }
+        
+        /* Community Badge */
+        .coming-soon {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-weight: 600;
+            margin-left: 0.5rem;
+        }
+        
+        /* Status indicator */
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .controls {
+                grid-template-columns: 1fr;
+            }
+            
+            .code-example {
+                grid-template-columns: 1fr;
+            }
+            
+            #editor {
+                height: 300px;
+            }
+            
+            .header-actions {
+                width: 100%;
+                justify-content: flex-start;
+            }
+        }
+        
+        /* Utility */
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="mainContainer">
+        <header id="mainHeader">
+            <h1>CodeSensei 🥋</h1>
+            <p class="tagline">Your AI-Powered Python Performance Coach</p>
+        </header>
+        
+        <div class="editor-section" id="editorSection">
+            <div class="section-header">
+                <span class="section-title">Code Editor</span>
+                <div class="header-actions">
+
+                    <button class="icon-btn" onclick="openTopicsPanel()" title="Learn Python Topics">📚 Learn</button>
+
+                    <button class="icon-btn" onclick="toggleFullscreen()" title="Fullscreen (F11)">
+                        <span id="fullscreenIcon">⛶</span> Fullscreen
+                    </button>
+                    <button class="icon-btn" onclick="downloadCode()" title="Download Code">
+                        📥 Download
+                    </button>
+                    <button class="icon-btn" onclick="triggerUpload()" title="Upload File">
+                        📤 Upload
+                    </button>
+                    <button class="icon-btn" onclick="shareCode()" title="Share Code">
+                        🔗 Share
+                    </button>
+                    <button class="icon-btn" onclick="beautifyCode()" title="Format Code">
+                        ✨ Beautify
+                    </button>
+                    <button class="icon-btn" onclick="openCommunity()" title="Coming Soon!">
+                        👥 Community <span class="coming-soon">Soon</span>
+                    </button>
+                    <div class="mode-toggle">
+                        <span>Advanced</span>
+                        <input type="checkbox" id="advancedMode">
+                    </div>
+                </div>
+            </div>
+            <div id="editor"></div>
+        </div>
+        
+        <div class="controls">
+            <button class="btn btn-run" onclick="runCode()" id="runBtn">
+                <span class="btn-icon">▶</span>
+                <span>Run Code</span>
+            </button>
+            <button class="btn btn-optimize" onclick="analyzeCode()" id="analyzeBtn">
+                <span class="btn-icon">⚡</span>
+                <span>Analyze Performance</span>
+            </button>
+            <button class="btn btn-secondary" onclick="clearEditor()" id="clearBtn">
+                <span class="btn-icon">🗑️</span>
+                <span>Clear</span>
+            </button>
+        </div>
+        
+        <div class="output-section" id="outputSection">
+            <div class="section-header">
+                <span class="section-title">Console Output</span>
+                <div class="status-indicator hidden" id="statusIndicator">
+                    <span class="status-dot"></span>
+                    <span>Running...</span>
+                </div>
+            </div>
+            <pre id="output"></pre>
+        </div>
+        
+        <div class="suggestion-panel hidden" id="suggestionPanel">
+            <!-- Dynamic content -->
+        </div>
+    </div>
+    
+    <!-- Share Modal -->
+    <div class="modal" id="shareModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Share Your Code</h2>
+                <button class="modal-close" onclick="closeModal('shareModal')">✕</button>
+            </div>
+            <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                Copy this link to share your code:
+            </p>
+            <div class="share-link" id="shareLink">
+                Generating link...
+            </div>
+            <button class="btn btn-optimize" onclick="copyShareLink()" style="width: 100%;">
+                <span class="btn-icon">📋</span>
+                <span>Copy Link</span>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Community Modal -->
+    <div class="modal" id="communityModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🚀 Community Features Coming Soon!</h2>
+                <button class="modal-close" onclick="closeModal('communityModal')">✕</button>
+            </div>
+            <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                We're building an amazing community where you can:
+            </p>
+            <ul style="color: var(--text-secondary); line-height: 2; margin-left: 1.5rem;">
+                <li>📤 Share your code snippets with others</li>
+                <li>💡 Browse community solutions</li>
+                <li>⭐ Save your favorite snippets</li>
+                <li>💬 Get feedback from peers</li>
+                <li>🏆 Earn badges and achievements</li>
+                <li>📚 Access curated learning paths</li>
+            </ul>
+            <p style="color: var(--text-secondary); margin-top: 1.5rem;">
+                Stay tuned for updates! In the meantime, use the Share button to share code with friends.
+            </p>
+        </div>
+    </div>
+    
+    <!-- File Input -->
+    <input type="file" id="fileInput" class="file-input" accept=".py,.txt" onchange="handleFileUpload(event)">
+    
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <span id="toastIcon">✓</span>
+        <span id="toastMessage">Success!</span>
+    </div>
+    
+    <script src="https://unpkg.com/monaco-editor@0.45.0/min/vs/loader.js"></script>
+    
+    <script>
+        // Initialize Monaco Editor
+        require.config({ 
+            paths: { vs: 'https://unpkg.com/monaco-editor@0.45.0/min/vs' } 
+        });
+        
+        require(['vs/editor/editor.main'], function () {
+            window.editor = monaco.editor.create(document.getElementById('editor'), {
+                value: `# Welcome to CodeSensei! 🥋
+# Try this example to see performance analysis in action:
+
+def find_duplicates(data):
+    duplicates = []
+    for item in data:
+        if data.count(item) > 1:  # This is slow!
+            if item not in duplicates:
+                duplicates.append(item)
+    return duplicates
+
+# Test it
+numbers = [1, 2, 3, 2, 4, 5, 3, 6, 7, 8, 9, 1]
+result = find_duplicates(numbers)
+print("Duplicates found:", result)`,
+                language: 'python',
+                theme: 'vs-dark',
+                fontSize: 14,
+                minimap: { enabled: false },
+                scrollBeyondLastLine: false,
+                automaticLayout: true,
+                lineNumbers: 'on',
+                renderLineHighlight: 'all',
+                smoothScrolling: true,
+                cursorBlinking: 'smooth'
+            });
+            
+            // Load from URL if shared
+            loadFromURL();
+        });
+        
+        const API_URL = 'http://127.0.0.1:5000';
+        let isRunning = false;
+        let isFullscreen = false;
+        
+        // ==================== FULLSCREEN ====================
+        
+        function toggleFullscreen() {
+            isFullscreen = !isFullscreen;
+            const container = document.getElementById('mainContainer');
+            const header = document.getElementById('mainHeader');
+            const editorSection = document.getElementById('editorSection');
+            const outputSection = document.getElementById('outputSection');
+            const editorEl = document.getElementById('editor');
+            const outputEl = document.getElementById('output');
+            const icon = document.getElementById('fullscreenIcon');
+            
+            if (isFullscreen) {
+                document.body.classList.add('fullscreen');
+                container.classList.add('fullscreen');
+                header.classList.add('hidden');
+                editorSection.classList.add('fullscreen');
+                outputSection.classList.add('fullscreen');
+                editorEl.classList.add('fullscreen');
+                outputEl.classList.add('fullscreen');
+                icon.textContent = '⛶';
+                showToast('Fullscreen mode enabled. Press F11 or ESC to exit.', 'success');
+            } else {
+                document.body.classList.remove('fullscreen');
+                container.classList.remove('fullscreen');
+                header.classList.remove('hidden');
+                editorSection.classList.remove('fullscreen');
+                outputSection.classList.remove('fullscreen');
+                editorEl.classList.remove('fullscreen');
+                outputEl.classList.remove('fullscreen');
+                icon.textContent = '⛶';
+                showToast('Fullscreen mode disabled', 'success');
+            }
+        }
+        
+        // ==================== DOWNLOAD ====================
+        
+        function downloadCode() {
+            const code = editor.getValue();
+            if (!code.trim()) {
+                showToast('No code to download!', 'error');
+                return;
+            }
+            
+            const blob = new Blob([code], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'codesensei_' + new Date().getTime() + '.py';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showToast('Code downloaded successfully!', 'success');
+        }
+        
+        // ==================== UPLOAD ====================
+        
+        function triggerUpload() {
+            document.getElementById('fileInput').click();
+        }
+        
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                editor.setValue(e.target.result);
+                showToast(`File "${file.name}" loaded successfully!`, 'success');
+            };
+            reader.onerror = function() {
+                showToast('Error reading file', 'error');
+            };
+            reader.readAsText(file);
+            
+            // Reset input
+            event.target.value = '';
+        }
+        
+        // ==================== SHARE ====================
+        
+        function shareCode() {
+            const code = editor.getValue();
+            if (!code.trim()) {
+                showToast('No code to share!', 'error');
+                return;
+            }
+            
+            const encoded = btoa(encodeURIComponent(code));
+            const url = `${window.location.origin}${window.location.pathname}?code=${encoded}`;
+            
+            document.getElementById('shareLink').textContent = url;
+            document.getElementById('shareModal').classList.add('active');
+        }
+        
+        function copyShareLink() {
+            const link = document.getElementById('shareLink').textContent;
+            navigator.clipboard.writeText(link).then(() => {
+                showToast('Link copied to clipboard!', 'success');
+                closeModal('shareModal');
+            }).catch(() => {
+                showToast('Failed to copy link', 'error');
+            });
+        }
+        
+        function loadFromURL() {
+            const params = new URLSearchParams(window.location.search);
+            const code = params.get('code');
+            
+            if (code) {
+                try {
+                    const decoded = decodeURIComponent(atob(code));
+                    editor.setValue(decoded);
+                    showToast('Code loaded from shared link', 'success');
+                } catch (e) {
+                    console.error('Failed to load shared code:', e);
+                }
+            }
+        }
+        
+        // ==================== BEAUTIFY ====================
+        
+        async function beautifyCode() {
+            const code = editor.getValue();
+            if (!code.trim()) {
+                showToast('No code to format!', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/format`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    editor.setValue(data.code);
+                    showToast('Code formatted successfully!', 'success');
+                } else {
+                    showToast(data.message || 'Cannot format invalid code', 'error');
+                }
+            } catch (error) {
+                showToast('Error connecting to backend', 'error');
+            }
+        }
+        
+        // ==================== CLEAR ====================
+        
+        function clearEditor() {
+            if (confirm('Clear all code in the editor?')) {
+                editor.setValue('# Write your Python code here\n');
+                document.getElementById('output').textContent = '';
+                document.getElementById('suggestionPanel').classList.add('hidden');
+                showToast('Editor cleared', 'success');
+            }
+        }
+        
+        // ==================== COMMUNITY ====================
+        
+        function openCommunity() {
+            document.getElementById('communityModal').classList.add('active');
+        }
+        
+        // ==================== MODAL ====================
+        
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+        
+        // Close modals on ESC or background click
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeModal('shareModal');
+                closeModal('communityModal');
+                if (isFullscreen) toggleFullscreen();
+            }
+        });
+        
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('active');
+                }
+            });
+        });
+        
+        // ==================== TOAST ====================
+        
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const icon = document.getElementById('toastIcon');
+            const msg = document.getElementById('toastMessage');
+            
+            icon.textContent = type === 'success' ? '✓' : '✕';
+            msg.textContent = message;
+            toast.className = `toast ${type} active`;
+            
+            setTimeout(() => {
+                toast.classList.remove('active');
+            }, 3000);
+        }
+        
+        // ==================== LOADING STATE ====================
+        
+        function setLoading(isLoading, buttonId) {
+            const btn = document.getElementById(buttonId);
+            const runBtn = document.getElementById('runBtn');
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            const clearBtn = document.getElementById('clearBtn');
+            
+            if (isLoading) {
+                isRunning = true;
+                runBtn.disabled = true;
+                analyzeBtn.disabled = true;
+                clearBtn.disabled = true;
+                
+                const spinner = '<span class="spinner"></span>';
+                if (buttonId === 'runBtn') {
+                    btn.innerHTML = spinner + '<span>Running...</span>';
+                } else {
+                    btn.innerHTML = spinner + '<span>Analyzing...</span>';
+                }
+                
+                document.getElementById('statusIndicator').classList.remove('hidden');
+            } else {
+                isRunning = false;
+                runBtn.disabled = false;
+                analyzeBtn.disabled = false;
+                clearBtn.disabled = false;
+                runBtn.innerHTML = '<span class="btn-icon">▶</span><span>Run Code</span>';
+                analyzeBtn.innerHTML = '<span class="btn-icon">⚡</span><span>Analyze Performance</span>';
+                document.getElementById('statusIndicator').classList.add('hidden');
+            }
+        }
+        
+        // Helper: Display output
+        function displayOutput(text, isError = false) {
+            const outputEl = document.getElementById('output');
+            outputEl.textContent = text;
+            outputEl.className = isError ? 'output-error' : 'output-success';
+        }
+        
+        // ==================== RUN CODE ====================
+        
+        async function runCode() {
+            if (isRunning) return;
+            
+            const code = editor.getValue();
+            
+            if (!code.trim()) {
+                displayOutput('⚠️ Please write some code first!', true);
+                return;
+            }
+            
+            setLoading(true, 'runBtn');
+            document.getElementById('suggestionPanel').classList.add('hidden');
+            
+            try {
+                const response = await fetch(`${API_URL}/run`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok || data.error || !data.success) {
+                    const errorMsg = formatError(data);
+                    displayOutput(errorMsg, true);
+                } else {
+                    displayOutput(data.output || '✓ Program completed successfully (no output)');
+                }
+                
+            } catch (error) {
+                displayOutput(`❌ Connection Error\n\nCouldn't connect to backend server.\nMake sure it's running on ${API_URL}`, true);
+            } finally {
+                setLoading(false, 'runBtn');
+            }
+        }
+        
+        // ==================== ANALYZE CODE ====================
+        
+        async function analyzeCode() {
+            if (isRunning) return;
+            
+            const code = editor.getValue();
+            
+            if (!code.trim()) {
+                displayOutput('⚠️ Please write some code first!', true);
+                return;
+            }
+            
+            setLoading(true, 'analyzeBtn');
+            displayOutput('Analyzing code...');
+            
+            try {
+                const response = await fetch(`${API_URL}/analyze`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok || data.error) {
+                    const errorMsg = formatError(data);
+                    displayOutput(errorMsg, true);
+                    document.getElementById('suggestionPanel').classList.add('hidden');
+                } else {
+                    displayAnalysisResults(data);
+                }
+                
+            } catch (error) {
+                displayOutput(`❌ Connection Error\n\nCouldn't connect to backend server.\nMake sure it's running on ${API_URL}`, true);
+                document.getElementById('suggestionPanel').classList.add('hidden');
+            } finally {
+                setLoading(false, 'analyzeBtn');
+            }
+        }
+        
+        // Format Error Messages
+        function formatError(data) {
+            let message = `❌ ${data.error_type || data.error || 'Error'}\n\n`;
+            
+            if (data.line) {
+                message += `Line ${data.line}\n\n`;
+            }
+            
+            message += data.message || data.friendly || 'An error occurred';
+            
+            if (data.raw_error && document.getElementById('advancedMode').checked) {
+                message += `\n\n--- Technical Details ---\n${data.raw_error}`;
+            }
+            
+            return message;
+        }
+        
+        // Display Analysis Results
+        function displayAnalysisResults(data) {
+            const panel = document.getElementById('suggestionPanel');
+            
+            if (data.status === 'looks_good') {
+                panel.innerHTML = `
+                    <div class="success-message">
+                        <div class="icon">✨</div>
+                        <h3>Excellent Work!</h3>
+                        <p>${data.message}</p>
+                    </div>
+                `;
+                panel.classList.remove('hidden');
+                displayOutput('✓ Analysis complete - No performance issues detected!');
+                return;
+            }
+            
+            if (data.status === 'error') {
+                displayOutput(formatError(data), true);
+                panel.classList.add('hidden');
+                return;
+            }
+            
+            if (data.status === 'optimization_possible') {
+                const issue = data.issue;
+                const isAdvanced = document.getElementById('advancedMode').checked;
+                
+                panel.innerHTML = `
+                    <div class="issue-header">
+                        <div class="issue-icon">💡</div>
+                        <div class="issue-content">
+                            <h3>${issue.title}</h3>
+                            <p class="issue-description">
+                                ${isAdvanced ? issue.explanation : issue.description}
+                            </p>
+                            <span class="severity-badge severity-${issue.severity}">
+                                ${issue.severity} priority
+                            </span>
+                            ${issue.line ? `<span class="severity-badge" style="margin-left: 0.5rem;">Line ${issue.line}</span>` : ''}
+                        </div>
+                    </div>
+                    
+                    <div class="detail-section">
+                        <h4>💬 What's happening?</h4>
+                        <p>${issue.explanation}</p>
+                        
+                        <h4>✅ How to fix it</h4>
+                        <p>${issue.suggestion}</p>
+                        
+                        ${data.examples && data.examples.before ? `
+                            <div class="code-example">
+                                <div class="code-block">
+                                    <div class="code-block-label before-label">❌ Before (Slow)</div>
+                                    <pre>${escapeHtml(data.examples.before)}</pre>
+                                </div>
+                                <div class="code-block">
+                                    <div class="code-block-label after-label">✅ After (Fast)</div>
+                                    <pre>${escapeHtml(data.examples.after)}</pre>
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+                
+                panel.classList.remove('hidden');
+                displayOutput('⚡ Performance optimization opportunities found!');
+            }
+        }
+        
+        // Helper: Escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // ==================== KEYBOARD SHORTCUTS ====================
+        
+        document.addEventListener('keydown', (e) => {
+            // Ctrl/Cmd + Enter to run
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                runCode();
+            }
+            
+            // Ctrl/Cmd + Shift + A to analyze
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'A') {
+                e.preventDefault();
+                analyzeCode();
+            }
+            
+            // F11 for fullscreen
+            if (e.key === 'F11') {
+                e.preventDefault();
+                toggleFullscreen();
+            }
+            
+            // Ctrl/Cmd + S to download
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                downloadCode();
+            }
+            
+            // Ctrl/Cmd + Shift + F to format
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'F') {
+                e.preventDefault();
+                beautifyCode();
+            }
+        });
+        
+        // ==================== BACKEND HEALTH CHECK ====================
+        
+        async function checkBackendHealth() {
+            try {
+                const response = await fetch(`${API_URL}/health`);
+                if (response.ok) {
+                    console.log('✅ Backend connected successfully');
+                }
+            } catch (error) {
+                console.warn('⚠️ Backend not responding');
+                displayOutput('⚠️ Backend Server Not Running\n\nPlease start the backend:\n$ python backend_simple.py', true);
+            }
+        }
+        
+        // Initialize
+        setTimeout(checkBackendHealth, 1000);
+
+
+
+
+    
+
+    const pythonTopics = {
+    'if-else': {
+        title: 'If / Else',
+        icon: '🔀',
+        steps: {
+            what: {
+                title: 'What it does',
+                content: 'If/else helps Python make decisions. It lets your code do different things depending on whether something is true or false.'
+            },
+            example: {
+                title: 'Minimal Example',
+                code: `age = 15
+
+if age >= 18:
+    print("You can vote")
+else:
+    print("You're too young to vote")`
+            },
+            how: {
+                title: 'How it works',
+                content: `Python checks if age is 18 or more.
+• If YES → it runs the first print
+• If NO → it skips to "else" and runs the second print
+
+Only ONE of these messages will appear.`
+            },
+            try: {
+                title: 'Try it yourself',
+                content: 'Change the age to 20, then run it. What happens? Try age = 17. The message changes!'
+            },
+            mistake: {
+                title: 'Common beginner mistake',
+                content: '⚠️ Forgetting the colon (:) after if or else. Python needs it to know where the condition ends!'
+            }
+        }
+    },
+  
+    'for-loop': {
+        title: 'For Loop',
+        icon: '🔁',
+        steps: {
+            what: {
+                title: 'What it does',
+                content: 'A for loop repeats code multiple times. It goes through a list of things, one at a time.'
+            },
+            example: {
+                title: 'Minimal Example',
+                code: `fruits = ['apple', 'banana', 'orange']
+
+for fruit in fruits:
+    print(f"I like {fruit}")`
+            },
+            how: {
+                title: 'How it works',
+                content: `Python looks at the list of fruits.
+• First time: fruit = 'apple' → prints "I like apple"
+• Second time: fruit = 'banana' → prints "I like banana"  
+• Third time: fruit = 'orange' → prints "I like orange"
+• Then it stops (no more fruits left)`
+            },
+            try: {
+                title: 'Try it yourself',
+                content: 'Add more fruits to the list! Try ["kiwi", "mango", "grape"]. Each one will get printed.'
+            },
+            mistake: {
+                title: 'Common beginner mistake',
+                content: '⚠️ Using "fruit" (singular) for the variable but "fruits" (plural) for the list helps you remember which is which!'
+            }
+        }
+    },
+    
+    'while-loop': {
+        title: 'While Loop',
+        icon: '♾️',
+        steps: {
+            what: {
+                title: 'What it does',
+                content: 'A while loop keeps running as long as something stays true. It\'s like saying "keep going until I tell you to stop."'
+            },
+            example: {
+                title: 'Minimal Example',
+                code: `count = 1
+
+while count <= 5:
+    print(f"Count is {count}")
+    count = count + 1`
+            },
+            how: {
+                title: 'How it works',
+                content: `Python checks: "Is count less than or equal to 5?"
+• If YES → print the message, add 1 to count, check again
+• If NO → stop the loop
+
+So it prints: 1, 2, 3, 4, 5, then stops.`
+            },
+            try: {
+                title: 'Try it yourself',
+                content: 'Change the 5 to 3. Now it only counts to 3. What happens if you change count = 1 to count = 10?'
+            },
+            mistake: {
+                title: 'Common beginner mistake',
+                content: '⚠️ Forgetting "count = count + 1" creates an infinite loop! The count never changes, so the loop never stops.'
+            }
+        }
+    },
+    
+    'functions': {
+        title: 'Functions',
+        icon: '📦',
+        steps: {
+            what: {
+                title: 'What it does',
+                content: 'A function is like a recipe. You write code once, give it a name, then use it whenever you want.'
+            },
+            example: {
+                title: 'Minimal Example',
+                code: `def greet(name):
+    message = f"Hello, {name}!"
+    return message
+
+result = greet("Alice")
+print(result)`
+            },
+            how: {
+                title: 'How it works',
+                content: `When you call greet("Alice"):
+• Python jumps to the function
+• name becomes "Alice"
+• Creates the message "Hello, Alice!"
+• Returns it back
+• result gets this message
+• Then you print it`
+            },
+            try: {
+                title: 'Try it yourself',
+                content: 'Call greet with different names: greet("Bob"), greet("Sarah"). Each time you get a personalized greeting!'
+            },
+            mistake: {
+                title: 'Common beginner mistake',
+                content: '⚠️ Forgetting "return" means the function does the work but gives you nothing back. You\'ll get "None".'
+            }
+        }
+    },
+    
+    'lists': {
+        title: 'Lists',
+        icon: '📝',
+        steps: {
+            what: {
+                title: 'What it does',
+                content: 'A list is like a container that holds multiple items in order. You can add, remove, or change items.'
+            },
+            example: {
+                title: 'Minimal Example',
+                code: `colors = ['red', 'blue', 'green']
+
+colors.append('yellow')
+first_color = colors[0]
+print(first_color)  # prints 'red'`
+            },
+            how: {
+                title: 'How it works',
+                content: `Python keeps items in order, starting from 0:
+• colors[0] is 'red' (first item)
+• colors[1] is 'blue' (second item)
+• append adds 'yellow' at the end
+• Now the list has 4 colors`
+            },
+            try: {
+                title: 'Try it yourself',
+                content: 'Try colors[2] to get the third item. Add more colors with append. Change colors[0] = "pink" to replace red!'
+            },
+            mistake: {
+                title: 'Common beginner mistake',
+                content: '⚠️ Lists start at 0, not 1. So the first item is [0], second is [1]. colors[3] on a 3-item list gives an error!'
+            }
+        }
+    },
+    
+    'dictionaries': {
+        title: 'Dictionaries',
+        icon: '📚',
+        steps: {
+            what: {
+                title: 'What it does',
+                content: 'A dictionary stores pairs: a key (like a word) and a value (like its definition). You look things up by their key.'
+            },
+            example: {
+                title: 'Minimal Example',
+                code: `student = {
+    'name': 'Alice',
+    'age': 15,
+    'grade': 'A'
+}
+
+print(student['name'])  # prints 'Alice'`
+            },
+            how: {
+                title: 'How it works',
+                content: `Each piece of info has a label:
+• 'name' is the key, 'Alice' is the value
+• When you ask for student['name'], Python finds 'name' and gives you 'Alice'
+• It's like a real dictionary: you look up a word (key) to get its meaning (value)`
+            },
+            try: {
+                title: 'Try it yourself',
+                content: 'Add more keys: student["school"] = "Central High". Get the age: print(student["age"]). It\'s that simple!'
+            },
+            mistake: {
+                title: 'Common beginner mistake',
+                content: '⚠️ Using student.name instead of student["name"]. Dictionaries need square brackets and quotes around keys!'
+            }
+        }
+    },
+    
+    'tuples': {
+        title: 'Tuples',
+        icon: '🔒',
+        steps: {
+            what: {
+                title: 'What it does',
+                content: 'A tuple is like a list that can\'t be changed. Once you create it, it stays the same forever.'
+            },
+            example: {
+                title: 'Minimal Example',
+                code: `coordinates = (10, 20)
+
+x = coordinates[0]
+y = coordinates[1]
+print(f"X: {x}, Y: {y}")`
+            },
+            how: {
+                title: 'How it works',
+                content: `Tuples use parentheses ( ) instead of brackets [ ]
+• coordinates[0] is 10
+• coordinates[1] is 20
+• You CANNOT do coordinates[0] = 15 (it's locked!)
+• This is useful when you want to protect data`
+            },
+            try: {
+                title: 'Try it yourself',
+                content: 'Try to change it: coordinates[0] = 99. Python will give an error. That\'s the point - tuples are unchangeable!'
+            },
+            mistake: {
+                title: 'Common beginner mistake',
+                content: '⚠️ Forgetting the comma in a one-item tuple: (5) is just 5, but (5,) is a tuple. Weird, but that\'s Python!'
+            }
+        }
+    },
+    
+    'sets': {
+        title: 'Sets',
+        icon: '🎯',
+        steps: {
+            what: {
+                title: 'What it does',
+                content: 'A set is a collection with no duplicates. If you add the same item twice, it only keeps one copy.'
+            },
+            example: {
+                title: 'Minimal Example',
+                code: `numbers = {1, 2, 2, 3, 3, 3}
+print(numbers)  # prints {1, 2, 3}
+
+numbers.add(4)
+print(numbers)  # prints {1, 2, 3, 4}`
+            },
+            how: {
+                title: 'How it works',
+                content: `Python automatically removes duplicates:
+• You put in: 1, 2, 2, 3, 3, 3
+• Python keeps: {1, 2, 3}
+• Sets are great for "unique items only"
+• They're fast for checking "is this item here?"`
+            },
+            try: {
+                title: 'Try it yourself',
+                content: 'Add the same number twice: numbers.add(2), then print. You\'ll still see only one 2. Sets don\'t care!'
+            },
+            mistake: {
+                title: 'Common beginner mistake',
+                content: '⚠️ Sets have no order. numbers[0] gives an error because sets don\'t have "first" or "second" - just "in" or "not in"!'
+            }
+        }
+    },
+    
+    'classes': {
+        title: 'Basic Classes',
+        icon: '🏗️',
+        steps: {
+            what: {
+                title: 'What it does',
+                content: 'A class is like a blueprint. It describes what something should have (data) and what it can do (actions).'
+            },
+            example: {
+                title: 'Minimal Example',
+                code: `class Dog:
+    def __init__(self, name):
+        self.name = name
+    
+    def bark(self):
+        print(f"{self.name} says Woof!")
+
+my_dog = Dog("Max")
+my_dog.bark()`
+            },
+            how: {
+                title: 'How it works',
+                content: `Think of Dog as a template:
+• __init__ sets up a new dog with a name
+• bark is an action the dog can do
+• my_dog = Dog("Max") creates an actual dog named Max
+• my_dog.bark() makes Max bark`
+            },
+            try: {
+                title: 'Try it yourself',
+                content: 'Create another dog: your_dog = Dog("Buddy"). Make it bark: your_dog.bark(). Each dog has its own name!'
+            },
+            mistake: {
+                title: 'Common beginner mistake',
+                content: '⚠️ Forgetting "self" in methods. It tells Python "this belongs to THIS specific dog" not all dogs in general.'
+            }
+        }
+    }
+};
+
+// ========================================
+// UI FUNCTIONS
+// ========================================
+
+function openTopicsPanel() {
+    const modal = document.getElementById('topicsModal');
+    if (!modal) {
+        createTopicsModal();
+    }
+    renderTopicsList();
+    document.getElementById('topicsModal').classList.add('active');
+}
+
+function createTopicsModal() {
+    const modalHTML = `
+        <div class="modal" id="topicsModal">
+            <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow-y: auto;">
+                <div class="modal-header">
+                    <h2>📚 Learn Python - Step by Step</h2>
+                    <button class="modal-close" onclick="closeModal('topicsModal')">✕</button>
+                </div>
+                <div id="topicsContent">
+                    <!-- Content will be inserted here -->
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+}
+
+function renderTopicsList() {
+    const container = document.getElementById('topicsContent');
+    
+    container.innerHTML = `
+        <p style="color: var(--text-secondary); margin-bottom: 1.5rem; line-height: 1.6;">
+            Choose a topic to learn. Each lesson is short and simple - just the basics you need to start coding!
+        </p>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
+            ${Object.entries(pythonTopics).map(([key, topic]) => `
+                <button class="topic-card" onclick="showTopic('${key}')" 
+                        style="background: var(--bg-tertiary); border: 1px solid var(--border); 
+                               border-radius: 12px; padding: 1.5rem; cursor: pointer; 
+                               transition: all 0.3s; text-align: center;">
+                    <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">${topic.icon}</div>
+                    <div style="font-weight: 600; color: var(--text-primary);">${topic.title}</div>
+                </button>
+            `).join('')}
+        </div>
+        
+        <div style="margin-top: 2rem; padding: 1rem; background: rgba(99, 102, 241, 0.1); 
+                    border-radius: 8px; border-left: 4px solid var(--primary);">
+            <p style="color: var(--text-secondary); margin: 0; font-size: 0.875rem;">
+                💡 <strong>Tip:</strong> After learning a topic, try writing code in the editor. 
+                CodeSensei will help if you make mistakes!
+            </p>
+        </div>
+    `;
+    
+    // Add hover effect to cards
+    document.querySelectorAll('.topic-card').forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.background = 'var(--border)';
+            this.style.transform = 'translateY(-4px)';
+        });
+        card.addEventListener('mouseleave', function() {
+            this.style.background = 'var(--bg-tertiary)';
+            this.style.transform = 'translateY(0)';
+        });
+    });
+}
+
+function showTopic(topicKey) {
+    const topic = pythonTopics[topicKey];
+    const container = document.getElementById('topicsContent');
+    
+    container.innerHTML = `
+        <button onclick="renderTopicsList()" 
+                style="background: var(--bg-tertiary); border: 1px solid var(--border); 
+                       padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; 
+                       color: var(--text-primary); margin-bottom: 1.5rem;">
+            ← Back to Topics
+        </button>
+        
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <div style="font-size: 3rem; margin-bottom: 0.5rem;">${topic.icon}</div>
+            <h2 style="color: var(--primary-light); margin: 0;">${topic.title}</h2>
+        </div>
+        
+        ${renderTopicSteps(topic.steps, topicKey)}
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 2rem;">
+            <button onclick="insertTopicCode('${topicKey}')" 
+                    class="btn btn-optimize" style="width: 100%;">
+                <span class="btn-icon">📝</span>
+                <span>Try This Code</span>
+            </button>
+            <button onclick="renderTopicsList()" 
+                    class="btn btn-secondary" style="width: 100%;">
+                <span class="btn-icon">📚</span>
+                <span>Learn Another Topic</span>
+            </button>
+        </div>
+        
+        <div style="margin-top: 2rem; padding: 1rem; background: rgba(16, 185, 129, 0.1); 
+                    border-radius: 8px; border-left: 4px solid var(--success);">
+            <p style="color: var(--text-secondary); margin: 0; font-size: 0.875rem; line-height: 1.6;">
+                ✨ <strong>Next Steps:</strong><br>
+                • Click "Try This Code" to practice in the editor<br>
+                • Run the code and see what happens<br>
+                • Make changes and experiment<br>
+                • If you get errors, CodeSensei will explain them!
+            </p>
+        </div>
+    `;
+}
+
+function renderTopicSteps(steps, topicKey) {
+    return `
+        <!-- Step 1: What it does -->
+        <div class="topic-step" style="margin-bottom: 2rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+                <span style="background: var(--primary); color: white; width: 28px; height: 28px; 
+                             border-radius: 50%; display: flex; align-items: center; justify-content: center; 
+                             font-weight: 700; font-size: 0.875rem;">1</span>
+                <h3 style="margin: 0; color: var(--primary-light); font-size: 1.1rem;">${steps.what.title}</h3>
+            </div>
+            <p style="color: var(--text-secondary); line-height: 1.8; margin-left: 2.5rem;">
+                ${steps.what.content}
+            </p>
+        </div>
+        
+        <!-- Step 2: Example -->
+        <div class="topic-step" style="margin-bottom: 2rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+                <span style="background: var(--primary); color: white; width: 28px; height: 28px; 
+                             border-radius: 50%; display: flex; align-items: center; justify-content: center; 
+                             font-weight: 700; font-size: 0.875rem;">2</span>
+                <h3 style="margin: 0; color: var(--primary-light); font-size: 1.1rem;">${steps.example.title}</h3>
+            </div>
+            <div style="margin-left: 2.5rem;">
+                <pre style="background: #000; color: #0f0; padding: 1rem; border-radius: 8px; 
+                           font-family: 'JetBrains Mono', monospace; overflow-x: auto; 
+                           border: 1px solid var(--border);">${escapeHtml(steps.example.code)}</pre>
+            </div>
+        </div>
+        
+        <!-- Step 3: How it works -->
+        <div class="topic-step" style="margin-bottom: 2rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+                <span style="background: var(--primary); color: white; width: 28px; height: 28px; 
+                             border-radius: 50%; display: flex; align-items: center; justify-content: center; 
+                             font-weight: 700; font-size: 0.875rem;">3</span>
+                <h3 style="margin: 0; color: var(--primary-light); font-size: 1.1rem;">${steps.how.title}</h3>
+            </div>
+            <div style="color: var(--text-secondary); line-height: 1.8; margin-left: 2.5rem; 
+                       white-space: pre-line;">${steps.how.content}</div>
+        </div>
+        
+        <!-- Step 4: Try it -->
+        <div class="topic-step" style="margin-bottom: 2rem; background: rgba(16, 185, 129, 0.1); 
+                    padding: 1rem; border-radius: 8px; border-left: 4px solid var(--success);">
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+                <span style="background: var(--success); color: white; width: 28px; height: 28px; 
+                             border-radius: 50%; display: flex; align-items: center; justify-content: center; 
+                             font-weight: 700; font-size: 0.875rem;">4</span>
+                <h3 style="margin: 0; color: var(--success); font-size: 1.1rem;">${steps.try.title}</h3>
+            </div>
+            <p style="color: var(--text-secondary); line-height: 1.8; margin: 0; margin-left: 2.5rem;">
+                ${steps.try.content}
+            </p>
+        </div>
+        
+        <!-- Step 5: Common mistake -->
+        <div class="topic-step" style="margin-bottom: 2rem; background: rgba(245, 158, 11, 0.1); 
+                    padding: 1rem; border-radius: 8px; border-left: 4px solid var(--warning);">
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+                <span style="background: var(--warning); color: white; width: 28px; height: 28px; 
+                             border-radius: 50%; display: flex; align-items: center; justify-content: center; 
+                             font-weight: 700; font-size: 0.875rem;">5</span>
+                <h3 style="margin: 0; color: var(--warning); font-size: 1.1rem;">${steps.mistake.title}</h3>
+            </div>
+            <p style="color: var(--text-secondary); line-height: 1.8; margin: 0; margin-left: 2.5rem;">
+                ${steps.mistake.content}
+            </p>
+        </div>
+    `;
+}
+
+function insertTopicCode(topicKey) {
+    const topic = pythonTopics[topicKey];
+    const code = topic.steps.example.code;
+    
+    // Insert code into editor
+    editor.setValue(code);
+    
+    // Close modal
+    closeModal('topicsModal');
+    
+    // Show success message
+    showToast(`${topic.title} code loaded! Try running it.`, 'success');
+    
+    // Focus editor
+    editor.focus();
+}
+
+// Helper function (if not already defined)
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}    
+    
+    
+    </script>
+</body>
+</html>
